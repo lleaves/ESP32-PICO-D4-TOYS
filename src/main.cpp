@@ -1,26 +1,15 @@
-// This sketch if for an ESP32, it draws Jpeg images pulled from an SD Card
-// onto the TFT.
-
-// As well as the TFT_eSPI library you will need the JPEG Decoder library.
-// A copy can be downloaded here, it is based on the library by Makoto Kurauchi.
-// https://github.com/Bodmer/JPEGDecoder
-
-// Images on SD Card must be put in the root folder (top level) to be found
-// Use the SD library examples to verify your SD Card interface works!
-
-// The example images used to test this sketch can be found in the library
-// JPEGDecoder/extras folder
-//----------------------------------------------------------------------------------------------------
+#include <SPI.h>
 #include <string.h>
 #include <sd_card.h>
 #include <TFT_eSPI.h>
 #include <Encoder.h>
-
+#include <JPEGDecoder.h>
+#include "WiFi.h";
 TFT_eSPI tft = TFT_eSPI();
 Encoder myEnc(34, 35);
 SdCard tf;
 // JPEG decoder library
-#include <JPEGDecoder.h>
+
 int xpos=1;
 int ypos=1;
 int btn_click=27;
@@ -37,25 +26,39 @@ void setup() {
   //digitalWrite(22, HIGH); // Touch controller chip select (if used)
   digitalWrite(15, HIGH); // TFT screen chip select
   digitalWrite(25, HIGH); // SD card chips select, must use GPIO 5 (ESP32 SS)
-
+  String wssid="";
+  String wpwd="";
+  tf.readFile("/wifi.txt");
+  
   tft.begin();
   tft.setRotation(1);
   tft.fillScreen(TFT_BLACK);
+  int n=WiFi.scanNetworks();
+  if(n==0){
+    Serial.println("nowifi");
+  }else{
+    tft.setTextSize(1);
+    Serial.println("dingdingding");
+    tft.print(n);
+    tft.println(" networks found");
+    for (int i = 0; i < n; ++i) {
+        tft.setTextColor(random(0xFFFF));
+        // Print SSID and RSSI for each network found
+        tft.print(i + 1);
+        tft.print(": ");
+        tft.print(WiFi.SSID(i));
+        tft.print(" (");
+        tft.print(WiFi.RSSI(i));
+        tft.print(")");
+        tft.println((WiFi.encryptionType(i) == WIFI_AUTH_OPEN)?" ":"*");
+        delay(10);
+    }
+  }
   Serial.println("initialisation done.");
+  
 }
 
 
-//####################################################################################################
-// Show the execution time (optional)
-//####################################################################################################
-// WARNING: for UNO/AVR legacy reasons printing text to the screen with the Mega might not work for
-// sketch sizes greater than ~70KBytes because 16 bit address pointers are used in some libraries.
-
-// The Due will work fine with the HX8357_Due library.
-//####################################################################################################
-// Print image information to the serial port (optional)
-//####################################################################################################
-// JpegDec.decodeFile(...) or JpegDec.decodeArray(...) must be called before this info is available!
 void jpegInfo() {
 
   // Print information extracted from the JPEG file
@@ -220,58 +223,58 @@ int middel=100;
 // String pstr="hileaves";
 char pstr[]="hileaves";
 void loop() {
-  long newPosition = myEnc.read();
-  if (newPosition != oldPosition) {
-    tft.fillScreen(TFT_BGR);
-    tft.setTextSize(2);
-    if (newPosition > oldPosition)
-    {
-      if (middel <= right)
-      {
-        middel+=10;  
-        tft.setTextColor(random(0xFFFF));
-        // pstr=">>>";
-        strcpy(pstr,">>>");
-      }else{
-        tft.setTextColor(TFT_RED);
-        // pstr="!!!";
-        strcpy(pstr,"!!!");
-      }
-    }
+  // long newPosition = myEnc.read();
+  // if (newPosition != oldPosition) {
+  //   tft.fillScreen(TFT_BGR);
+  //   tft.setTextSize(2);
+  //   if (newPosition > oldPosition)
+  //   {
+  //     if (middel <= right)
+  //     {
+  //       middel+=10;  
+  //       tft.setTextColor(random(0xFFFF));
+  //       // pstr=">>>";
+  //       strcpy(pstr,">>>");
+  //     }else{
+  //       tft.setTextColor(TFT_RED);
+  //       // pstr="!!!";
+  //       strcpy(pstr,"!!!");
+  //     }
+  //   }
 
-    if (newPosition < oldPosition)
-    {
-      if (middel >= left)
-      {
-        middel-=10;
-        tft.setTextColor(random(0xFFFF));
-        // pstr="<<<";
-        strcpy(pstr,"<<<");
-      }else{
-        tft.setTextColor(TFT_RED);
-        // pstr="!!!";
-        strcpy(pstr,"!!!");
-      }
-    }
-    tft.setCursor(middel,15);
-    tft.println(pstr);
+  //   if (newPosition < oldPosition)
+  //   {
+  //     if (middel >= left)
+  //     {
+  //       middel-=10;
+  //       tft.setTextColor(random(0xFFFF));
+  //       // pstr="<<<";
+  //       strcpy(pstr,"<<<");
+  //     }else{
+  //       tft.setTextColor(TFT_RED);
+  //       // pstr="!!!";
+  //       strcpy(pstr,"!!!");
+  //     }
+  //   }
+  //   tft.setCursor(middel,15);
+  //   tft.println(pstr);
     
     
-    oldPosition = newPosition;
+  //   oldPosition = newPosition;
 
-    Serial.print(middel);
-    Serial.print("--");
-    Serial.println(newPosition);
-  }
-  if (digitalRead(btn_click) == LOW)
-  {
-    Serial.println("btn click");
-    tft.fillScreen(random(0xFFFF));
-    tft.setTextSize(2);
-    tft.setCursor(20,15);
-    tft.println("Color_random");
-  }
-  delay(100);
+  //   Serial.print(middel);
+  //   Serial.print("--");
+  //   Serial.println(newPosition);
+  // }
+  // if (digitalRead(btn_click) == LOW)
+  // {
+  //   Serial.println("btn click");
+  //   tft.fillScreen(random(0xFFFF));
+  //   tft.setTextSize(2);
+  //   tft.setCursor(20,15);
+  //   tft.println("Color_random");
+  // }
+  delay(1000);
   
   // tft.setRotation(1);  // portrait
   // tft.fillScreen(random(0xFFFF));
