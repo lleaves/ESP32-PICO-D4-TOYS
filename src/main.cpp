@@ -14,7 +14,7 @@ int xpos=1;
 int ypos=1;
 int btn_click=27;
 int TFT_SW=5;
-
+int getuv=33;
 //####################################################################################################
 // Setup
 //####################################################################################################
@@ -22,6 +22,7 @@ void setup() {
   Serial.begin(115200);
   tf.init();
   pinMode(btn_click,INPUT);
+  pinMode(getuv,INPUT);
   // Set all chip selects high to avoid bus contention during initialisation of each peripheral
   //digitalWrite(22, HIGH); // Touch controller chip select (if used)
   digitalWrite(15, HIGH); // TFT screen chip select
@@ -58,7 +59,22 @@ void setup() {
   
 }
 
+float mapfloat(float x, float in_min, float in_max, float out_min, float out_max)
+{
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+int averageAnalogRead(int pinToRead)
+{
+  byte numberOfReadings = 12;
+  unsigned int runningValue = 0; 
 
+  for(int x = 0 ; x < numberOfReadings ; x++)
+    runningValue += analogRead(pinToRead);
+  runningValue /= numberOfReadings;
+
+  return(runningValue);  
+
+}
 void jpegInfo() {
 
   // Print information extracted from the JPEG file
@@ -223,6 +239,23 @@ int middel=100;
 // String pstr="hileaves";
 char pstr[]="hileaves";
 void loop() {
+  int uvLevel = averageAnalogRead(getuv);
+
+  float outputVoltage = 3.3 * uvLevel/1024;
+  float uvIntensity = mapfloat(outputVoltage, 0.99, 2.9, 0.0, 15.0);
+
+  Serial.print("UVAnalogOutput: ");
+  Serial.print(uvLevel);
+
+  Serial.print(" OutputVoltage: ");
+  Serial.print(outputVoltage);
+
+  Serial.print(" UV Intensity: ");
+  Serial.print(uvIntensity);
+  Serial.print(" mW/cm^2");
+
+  Serial.println(); 
+  Serial.println(analogRead(getuv) * 3300 / 4095);
   // long newPosition = myEnc.read();
   // if (newPosition != oldPosition) {
   //   tft.fillScreen(TFT_BGR);
